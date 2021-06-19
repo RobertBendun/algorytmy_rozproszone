@@ -1,0 +1,11 @@
+Test(id_fragmentu : uint)
+	sprawdź czy adresat jest wewnątrz fragmentu id_fragmentu.
+
+Inside(in_fragment : bool)
+	odpowiedź na komunikat Test, in_fragment := id_fragment == fragment
+
+Report(w : uint)
+	zgłasza do rodzica kandydata na MOE o wadze w
+
+Change-Core
+	przekorzenienie drzewa z korzenia do MOE
