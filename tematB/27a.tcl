@@ -52,17 +52,23 @@ fiber create $liczbaWierz {
 		}
 	}
 
+	if { [llength $children ] == 0 && $parent != -1 } {
+		wyslij $parent "Report $moe_candidate_weight"
+	}
+
+	set moe_candidates_count [expr $moe_candidates_count + [llength $children]]
 
 	while {$run} {
 		fiber yield
 
 		iterate i $stopien {
 			set k [czytaj $i]
+			puts "$id\t$i\t$k"
 			if {$k == ""} { continue }
 			switch [lindex $k 0] {
 				"Test" {
 					set other [lindex $k 1]
-					wyslij $i "Inside [expr $fragment == $other] $id"
+					wyslij $i "Inside [expr $fragment == $other]"
 				}
 
 				"Inside" {
@@ -96,8 +102,28 @@ fiber create $liczbaWierz {
 							fiber yield
 							wyslij $parent "Report $moe_candidate_weight"
 						} else {
-							wyslij $moe_candidate "Change-Core"
+							# Znaleziono MOE w jednym z węzłów rdzenia
+							wyslij $core "Core-Report $moe_candidate_weight"
 						}
+					}
+				}
+
+				"Core-Report" {
+					set core_weight_candidate [lindex $k 1]
+					if {$moe_candidates_count != 0} { continue }
+
+					# Mamy MOE
+					if {$moe_weight_candidate == $core_weight_candidate} {
+						# TODO: actual implementation
+						puts "Found MOE: $moe_weight_candidate"
+						continue
+					}
+
+					if {$core_weight_candidate < $moe_weight_candidate} {
+						wyslij $core "Core-Report $core_weight_candidate"
+						set moe_weight_candidate $core_weight_candidate
+					} else {
+						wyslij $core "Core-Report $moe_weight_candidate"
 					}
 				}
 
@@ -147,11 +173,11 @@ ustaw_wagi
 
 proc vis {} {
 	fiber_iterate {
-		puts "$id:\tmoe=$moe_candidate\tweight=$moe_candidate_weight"
+		puts "$id:\tcandid=$moe_candidates_count\tmoe=$moe_candidate\tweight=$moe_candidate_weight"
 	}
 	puts "---------------------------------------"
 }
 
-iterate i 3 {
+iterate i 10 {
 	fiber yield; runda; vis
 }
