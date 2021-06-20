@@ -119,8 +119,8 @@ fiber create $liczbaWierz {
 
 					# Mamy MOE
 					if {$moe_candidate_weight == $core_candidate_weight} {
-						# TODO: actual implementation
-						puts "Found MOE: $moe_candidate_weight"
+						# TODO ustaw rodzica, porzuć bycie core
+						wyslij $moe_candidate "Change-Core"
 						continue
 					}
 
@@ -133,8 +133,13 @@ fiber create $liczbaWierz {
 				}
 
 				"Change-Core" {
-					lappend children $parent
-					set parent $i
+					set w [lindex $wagi $moe_candidate]
+					if { $w == $moe_candidate_weight } {
+						# TODO Connect(
+						puts "MOE REACHED"
+						continue
+					}
+
 					wyslij $moe_candidate "Change-Core"
 				}
 			}
@@ -178,7 +183,11 @@ ustaw_wagi
 
 proc vis {} {
 	fiber_iterate {
-		puts "$id:\tcandid=$moe_candidates_count\tmoe=$moe_candidate\tweight=$moe_candidate_weight"
+		set dweight $moe_candidate_weight
+		if { $dweight == [expr 1 << 30] } {
+			set dweight "_"
+		}
+		puts "$id:\tcandid=$moe_candidates_count\tmoe=$moe_candidate\tweight=$dweight\tparent=$parent"
 	}
 	puts [fiber error]
 	puts "---------------------------------------"
