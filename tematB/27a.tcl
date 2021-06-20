@@ -41,6 +41,7 @@ fiber create $liczbaWierz {
 	# Infinity := 1 << 30
 	set moe_candidate_weight [expr 1 << 30]
 	set moe_candidate "_"
+	set core_candidate_weight -1
 
 	# Do każdej krawędzi potencajlnie nie będącej w twoim fragmencie (nie będącej
 	# ani rodzicem, ani dzieckiem) wyślij komunikat <Test ID_FRAGMENTU> w celu
@@ -63,8 +64,8 @@ fiber create $liczbaWierz {
 
 		iterate i $stopien {
 			set k [czytaj $i]
-			puts "$id\t$i\t$k"
 			if {$k == ""} { continue }
+			puts "$id\t$i\t$k"
 			switch [lindex $k 0] {
 				"Test" {
 					set other [lindex $k 1]
@@ -103,27 +104,31 @@ fiber create $liczbaWierz {
 							wyslij $parent "Report $moe_candidate_weight"
 						} else {
 							# Znaleziono MOE w jednym z węzłów rdzenia
-							wyslij $core "Core-Report $moe_candidate_weight"
+							if { $core_candidate_weight < 0 || $core_candidate_weight > $moe_candidate_weight} {
+								wyslij $core "Core-Report $moe_candidate_weight"
+							} else {
+								wyslij $core "Core-Report $core_candidate_weight"
+							}
 						}
 					}
 				}
 
 				"Core-Report" {
-					set core_weight_candidate [lindex $k 1]
+					set core_candidate_weight [lindex $k 1]
 					if {$moe_candidates_count != 0} { continue }
 
 					# Mamy MOE
-					if {$moe_weight_candidate == $core_weight_candidate} {
+					if {$moe_candidate_weight == $core_candidate_weight} {
 						# TODO: actual implementation
-						puts "Found MOE: $moe_weight_candidate"
+						puts "Found MOE: $moe_candidate_weight"
 						continue
 					}
 
-					if {$core_weight_candidate < $moe_weight_candidate} {
-						wyslij $core "Core-Report $core_weight_candidate"
-						set moe_weight_candidate $core_weight_candidate
+					if {$core_candidate_weight < $moe_candidate_weight} {
+						wyslij $core "Core-Report $core_candidate_weight"
+						set moe_candidate_weight $core_candidate_weight
 					} else {
-						wyslij $core "Core-Report $moe_weight_candidate"
+						wyslij $core "Core-Report $moe_candidate_weight"
 					}
 				}
 
@@ -175,9 +180,12 @@ proc vis {} {
 	fiber_iterate {
 		puts "$id:\tcandid=$moe_candidates_count\tmoe=$moe_candidate\tweight=$moe_candidate_weight"
 	}
+	puts [fiber error]
 	puts "---------------------------------------"
 }
 
 iterate i 10 {
-	fiber yield; runda; vis
+	fiber yield
+	runda
+	vis
 }

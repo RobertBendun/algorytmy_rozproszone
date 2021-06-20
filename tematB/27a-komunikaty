@@ -9,3 +9,6 @@ Report(w : uint)
 
 Change-Core
 	przekorzenienie drzewa z korzenia do MOE
+
+Core-Report(weight : uint)
+	ustalenie MOE fragmentu pomiędzy węzłami rdzenia
