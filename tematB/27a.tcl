@@ -32,8 +32,6 @@ fiber create $liczbaWierz {
 		}
 	}
 
-	puts "lvl $id $level"
-
 	# ===================== Algorytm =====================
 
 	set moe_candidates_count 0
