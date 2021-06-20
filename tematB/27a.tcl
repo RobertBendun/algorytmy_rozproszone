@@ -27,12 +27,15 @@ fiber create $liczbaWierz {
 		[2389] { set parent -1 }
 		default { set parent 0 }
 	}
-	set fragment [expr $id >= 5]
+	# F1 - 2, F2 - 3
+	set fragment [expr 2 + [expr $id >= 5]]
 	switch $id {
 		0 - 1 - 5 - 7 - 10 - 11 { set children {} }
 		3 - 4 - 6 - 8           { set children {1} }
 		2 - 9                   { set children {1 2} }
 	}
+
+	set level 2
 
 	# ===================== Algorytm =====================
 
@@ -58,6 +61,9 @@ fiber create $liczbaWierz {
 	}
 
 	set moe_candidates_count [expr $moe_candidates_count + [llength $children]]
+
+	set connect_has_been_sent 0
+	set connect_has_been_received 0
 
 	while {$run} {
 		fiber yield
@@ -135,12 +141,42 @@ fiber create $liczbaWierz {
 				"Change-Core" {
 					set w [lindex $wagi $moe_candidate]
 					if { $w == $moe_candidate_weight } {
-						# TODO Connect(
-						puts "MOE REACHED"
+						# TODO Mark state as BRANCH
+						wyslij $moe_candidate "Connect $fragment $level"
+						set connect_has_been_sent 1
 						continue
 					}
 
 					wyslij $moe_candidate "Change-Core"
+				}
+
+				"Connect" {
+					set other_level [lindex $k 1]
+
+					if { $level < $other_level } {
+						# czekaj aż otrzymasz Connect(_, other_level) gdzie other_level >= $level
+						continue
+					}
+
+					if { $level == $other_level } {
+						# Kombinacja:
+						# [ ] krawędź MOE zostaje rdzeniem
+						# [ ] oba fragmenty zostają przekorzenione (odwrócenie ścieżki old_core -> moe)
+						# [ ] ++level
+						# [ ] rozpropaguj nowy poziom oraz fragment_id
+
+						if { !$connect_has_been_sent } {
+							# czekaj aż wyśle Connect
+							set connect_has_been_received 1
+							continue
+						}
+						continue
+					}
+
+					# TODO absorbcja
+					# TODO rozkminić stany
+					# [ ] nasz fragment zostaje powiększony o F1
+					# [ ] przekorzenienie od nas oraz ustawienie F2_id przez MOE
 				}
 			}
 		}

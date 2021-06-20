@@ -8,7 +8,10 @@ Report(w : uint)
 	zgłasza do rodzica kandydata na MOE o wadze w
 
 Change-Core
-	przekorzenienie drzewa z korzenia do MOE
+	powiadom wierzchołek (tego samego fragmentu) zwycięskiej krawędzi o byciu MOE
 
 Core-Report(weight : uint)
 	ustalenie MOE fragmentu pomiędzy węzłami rdzenia
+
+Connect(id_fragmentu : uint, level : uint)
+	inicjalizacja łączenia
