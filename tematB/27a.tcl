@@ -1,21 +1,7 @@
 source symul_lib.tcl
 
-set liczbaWierz 12
-
-# Konwencja:
-# - pierwszy wierzchołek to rodzic opisywanego wierzchołka
-set sasiedzi(0) {2}
-set sasiedzi(1) {2}
-set sasiedzi(2) {3 0 1}
-set sasiedzi(3) {2 4 6}
-set sasiedzi(4) {3 5 8}
-set sasiedzi(5) {4}
-set sasiedzi(6) {8 7 3}
-set sasiedzi(7) {6}
-set sasiedzi(8) {9 6 4}
-set sasiedzi(9) {8 10 11}
-set sasiedzi(10) {9}
-set sasiedzi(11) {9}
+source tematB/27a-kombinacja.tcl
+# source tematB/27a-absorbcja.tcl
 
 fiber create $liczbaWierz {
 	# ===================== Inicjalizacja wg założeń =====================
@@ -24,18 +10,29 @@ fiber create $liczbaWierz {
 		default { set core -1 }
 	}
 	switch -regexp $id {
-		[2389] { set parent -1 }
+		^[2389]$ { set parent -1 }
 		default { set parent 0 }
 	}
 	# F1 - 2, F2 - 3
 	set fragment [expr 2 + [expr $id >= 5]]
 	switch $id {
-		0 - 1 - 5 - 7 - 10 - 11 { set children {} }
-		3 - 4 - 6 - 8           { set children {1} }
-		2 - 9                   { set children {1 2} }
+		0 - 1 - 5 - 7 - 10 - 11 - 12 { set children {} }
+		3 - 4 - 6 - 8                { set children {1} }
+		2 - 9                        { set children {1 2} }
 	}
 
-	set level 2
+	if { $liczbaWierz == 12 } {
+		# Przykład z kombinacją
+		set level 2
+	} else {
+		# Przykład z absorbcją
+		switch -regexp $id {
+			^[0-5]$ { set level 2 }
+			default { set level 3 }
+		}
+	}
+
+	puts "lvl $id $level"
 
 	# ===================== Algorytm =====================
 
@@ -198,6 +195,7 @@ fiber create $liczbaWierz {
 					# TODO rozkminić stany
 					# [ ] nasz fragment zostaje powiększony o F1
 					# [ ] przekorzenienie od nas oraz ustawienie F2_id przez MOE
+					wyslij $moe_candidate "Propagate $fragment $level"
 				}
 
 				"Propagate" {
@@ -231,7 +229,7 @@ fiber create $liczbaWierz {
 						set old_parent $parent
 						set parent $i
 						if { $old_parent != -1 } {
-							lappend $children $old_parent
+							lappend children $old_parent
 						}
 					}
 
@@ -278,19 +276,10 @@ set waga(9,11) 12
 Inicjalizacja
 ustaw_wagi
 
-fiber_iterate {
-	set sasiedzi(0) {2}
-	set sasiedzi(1) {2}
-	set sasiedzi(2) {3 0 1}
-	set sasiedzi(3) {2 4 6}
-	set sasiedzi(4) {3 5 8}
-	set sasiedzi(5) {4}
-	set sasiedzi(6) {8 7 3}
-	set sasiedzi(7) {6}
-	set sasiedzi(8) {9 6 4}
-	set sasiedzi(9) {8 10 11}
-	set sasiedzi(10) {9}
-	set sasiedzi(11) {9}
+if { $liczbaWierz == 12 } {
+	fiber_iterate { source tematB/27a-kombinacja.tcl }
+} else {
+	fiber_iterate { source tematB/27a-absorbcja.tcl }
 }
 
 proc vis {} {
@@ -315,7 +304,13 @@ proc vis {} {
 	puts "---------------------------------------"
 }
 
-iterate i 12 {
+if { $liczbaWierz == 12 } {
+	set iterations 12
+} else {
+	set iterations 15
+}
+
+iterate i $iterations {
 	fiber yield
 	runda
 	vis
