@@ -65,12 +65,28 @@ fiber create $liczbaWierz {
 	set connect_has_been_received 0
 	set combine_started 0
 
+	set other_fragment_id -1
+	set original_core $core
+
 	while {$run} {
 		fiber yield
 
 		if { $connect_has_been_received && $connect_has_been_sent && !$combine_started } {
-			puts "Hellope"
 			set combine_started 1
+			# Kombinacja:
+			# [x] krawędź MOE zostaje rdzeniem
+			# [x] ++level
+			# [x] rozpropaguj nowy poziom oraz fragment_id
+			# [ ] oba fragmenty zostają przekorzenione (odwrócenie ścieżki old_core -> moe)
+
+			set fragment [expr $fragment * $other_fragment_id]
+			incr level
+			if { $parent >= 0 } {
+				wyslij $parent "Propagate $fragment $level"
+				set parent -1
+			} else {
+				wyslij $original_core "Propagate $fragment $level"
+			}
 		}
 
 		iterate i $stopien {
@@ -131,7 +147,11 @@ fiber create $liczbaWierz {
 					# Mamy MOE
 					if {$moe_candidate_weight == $core_candidate_weight} {
 						set w [lindex $wagi $moe_candidate]
-						if { $moe_candidate_weight == $w }
+						if { $moe_candidate_weight == $w } {
+							wyslij $moe_candidate "Connect $fragment $level"
+							set connect_has_been_sent 1
+							continue
+						}
 						wyslij $moe_candidate "Change-Core"
 						continue
 					}
@@ -157,7 +177,8 @@ fiber create $liczbaWierz {
 				}
 
 				"Connect" {
-					set other_level [lindex $k 1]
+					set other_fragment_id [lindex $k 1]
+					set other_level [lindex $k 2]
 
 					if { $level < $other_level } {
 						# czekaj aż otrzymasz Connect(_, other_level) gdzie other_level >= $level
@@ -165,17 +186,11 @@ fiber create $liczbaWierz {
 					}
 
 					if { $level == $other_level } {
-						# Kombinacja:
-						# [ ] krawędź MOE zostaje rdzeniem
-						# [ ] oba fragmenty zostają przekorzenione (odwrócenie ścieżki old_core -> moe)
-						# [ ] ++level
-						# [ ] rozpropaguj nowy poziom oraz fragment_id
-
-						if { !$connect_has_been_sent } {
-							# czekaj aż wyśle Connect
-							set connect_has_been_received 1
-							continue
-						}
+						set connect_has_been_received 1
+						set core $moe_candidate
+						# connect zostanie obsłużony na początku kolejnej iteracji
+						# w momencie spełniania wszystkich wymaganych warunków
+						# z uwagi na wiele potencjalnych ścieżek wejścia
 						continue
 					}
 
@@ -183,6 +198,46 @@ fiber create $liczbaWierz {
 					# TODO rozkminić stany
 					# [ ] nasz fragment zostaje powiększony o F1
 					# [ ] przekorzenienie od nas oraz ustawienie F2_id przez MOE
+				}
+
+				"Propagate" {
+					set fragment [lindex $k 1]
+					set level [lindex $k 2]
+
+					# if { $core != -1 } {
+					# }
+
+					if { $moe_candidate != "_" } {
+						set w [lindex $wagi $moe_candidate]
+						if { $moe_candidate == $i && $moe_candidate_weight == $w } {
+								set core $moe_candidate
+						}
+					}
+
+					set idx [lsearch $children $i]
+					if { $idx >= 0 } {
+						set children [lreplace $children $idx $idx]
+					}
+
+					if { $core >= 0 && $moe_candidate != $core } {
+						if { $core != $i } {
+							wyslij $core $k
+						}
+						set parent $i
+						set core -1
+					}
+
+					if { $parent != $i && [llength $children] > 0 } {
+						set old_parent $parent
+						set parent $i
+						if { $old_parent != -1 } {
+							lappend $children $old_parent
+						}
+					}
+
+					foreach child $children {
+						wyslij $child $k
+					}
 				}
 			}
 		}
@@ -223,19 +278,44 @@ set waga(9,11) 12
 Inicjalizacja
 ustaw_wagi
 
+fiber_iterate {
+	set sasiedzi(0) {2}
+	set sasiedzi(1) {2}
+	set sasiedzi(2) {3 0 1}
+	set sasiedzi(3) {2 4 6}
+	set sasiedzi(4) {3 5 8}
+	set sasiedzi(5) {4}
+	set sasiedzi(6) {8 7 3}
+	set sasiedzi(7) {6}
+	set sasiedzi(8) {9 6 4}
+	set sasiedzi(9) {8 10 11}
+	set sasiedzi(10) {9}
+	set sasiedzi(11) {9}
+}
+
 proc vis {} {
 	fiber_iterate {
 		set dweight $moe_candidate_weight
 		if { $dweight == [expr 1 << 30] } {
 			set dweight "_"
 		}
-		puts "$id:\tcandid=$moe_candidates_count\tmoe=$moe_candidate\tweight=$dweight\tparent=$parent"
+
+		set dparent $parent
+		if { $dparent == -1 } {
+			set dparent "_"
+		} else {
+			set dparent [lindex $sasiedzi($id) $parent]
+		}
+
+		set dl1 "$id:\tcc=$moe_candidates_count\tmoe=$moe_candidate\tw=$dweight\tp=$dparent"
+		set dl2 "c=$core\tf=$fragment"
+		puts "$dl1\t$dl2"
 	}
 	puts [fiber error]
 	puts "---------------------------------------"
 }
 
-iterate i 15 {
+iterate i 12 {
 	fiber yield
 	runda
 	vis

@@ -15,3 +15,5 @@ Core-Report(weight : uint)
 
 Connect(id_fragmentu : uint, level : uint)
 	inicjalizacja łączenia
+
+Propagate(fragment_id : uint, new_level : uint)
