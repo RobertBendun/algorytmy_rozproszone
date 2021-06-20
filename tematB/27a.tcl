@@ -39,7 +39,6 @@ fiber create $liczbaWierz {
 
 	# ===================== Algorytm =====================
 
-
 	set moe_candidates_count 0
 	# Infinity := 1 << 30
 	set moe_candidate_weight [expr 1 << 30]
@@ -64,9 +63,15 @@ fiber create $liczbaWierz {
 
 	set connect_has_been_sent 0
 	set connect_has_been_received 0
+	set combine_started 0
 
 	while {$run} {
 		fiber yield
+
+		if { $connect_has_been_received && $connect_has_been_sent && !$combine_started } {
+			puts "Hellope"
+			set combine_started 1
+		}
 
 		iterate i $stopien {
 			set k [czytaj $i]
@@ -125,7 +130,8 @@ fiber create $liczbaWierz {
 
 					# Mamy MOE
 					if {$moe_candidate_weight == $core_candidate_weight} {
-						# TODO ustaw rodzica, porzuć bycie core
+						set w [lindex $wagi $moe_candidate]
+						if { $moe_candidate_weight == $w }
 						wyslij $moe_candidate "Change-Core"
 						continue
 					}
@@ -229,7 +235,7 @@ proc vis {} {
 	puts "---------------------------------------"
 }
 
-iterate i 10 {
+iterate i 15 {
 	fiber yield
 	runda
 	vis
