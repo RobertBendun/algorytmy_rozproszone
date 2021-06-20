@@ -1,7 +1,7 @@
 source symul_lib.tcl
 
-source tematB/27a-kombinacja.tcl
-# source tematB/27a-absorbcja.tcl
+# source tematB/27a-kombinacja.tcl
+source tematB/27a-absorbcja.tcl
 
 fiber create $liczbaWierz {
 	# ===================== Inicjalizacja wg założeń =====================
@@ -83,6 +83,10 @@ fiber create $liczbaWierz {
 				set parent -1
 			} else {
 				wyslij $original_core "Propagate $fragment $level"
+			}
+
+			foreach child $children {
+				wyslij $child "Propagate $fragment $level"
 			}
 		}
 
