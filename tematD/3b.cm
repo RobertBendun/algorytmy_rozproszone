@@ -1,0 +1,30 @@
+binarysem sem;
+int licznik, i1, i2;
+
+void calculate(int &ref)
+{
+	for (;;) {
+		wait(sem);
+		++ref;
+		++licznik;
+		signal(sem);
+	}
+}
+
+void print()
+{
+	for (;;) {
+		cout << licznik << "\t" << (i1 + i2) << "\troznica=" << (i1 + i2 - licznik) << "\n";
+	}
+}
+
+void main()
+{
+	initialsem(sem, 1);
+
+	cobegin {
+		calculate(i1);
+		calculate(i2);
+		print();
+	}
+}

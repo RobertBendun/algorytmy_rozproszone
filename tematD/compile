@@ -1,0 +1,9 @@
+#!/bin/sh
+
+if [ -z $1 ]; then
+	echo "Give me some arguments"
+	exit 1
+fi
+
+../baci/bacc $1
+../baci/bainterp $1

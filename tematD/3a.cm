@@ -1,0 +1,25 @@
+int licznik, i1, i2;
+
+void calculate(int &ref)
+{
+	for (;;) {
+		++ref;
+		++licznik;
+	}
+}
+
+void print()
+{
+	for (;;) {
+		cout << licznik << "\t" << (i1 + i2) << "\troznica=" << (i1 + i2 - licznik) << "\n";
+	}
+}
+
+void main()
+{
+	cobegin {
+		calculate(i1);
+		calculate(i2);
+		print();
+	}
+}

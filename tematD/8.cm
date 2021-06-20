@@ -1,0 +1,79 @@
+const int N = 5;
+int buffer[N];
+int write_ptr = 0;
+int read_ptr = 0;
+
+int stkempty()
+{
+	return write_ptr == read_ptr;
+}
+
+int stkfull()
+{
+	return (write_ptr + 1) % N == read_ptr;
+}
+
+void stkpush(int value)
+{
+	buffer[write_ptr] = value;
+	write_ptr = (write_ptr + 1) % N;
+}
+
+int stkpop()
+{
+	int v;
+	v = buffer[read_ptr];
+	read_ptr = (read_ptr + 1) % N;
+	return v;
+}
+
+void stkprint()
+{
+	int p;
+	for (p = read_ptr; p != write_ptr; p = (p + 1) % N) {
+		cout << buffer[p] << " ";
+	}
+	cout << "\n";
+}
+
+binarysem full_stack, empty_stack;
+
+void Producent()
+{
+	int i = 0;
+
+	for (;;) {
+		if (stkfull()) {
+			signal(full_stack);
+			wait(empty_stack);
+			cout << "Producent\n";
+		}
+
+		stkpush(i);
+		i = (i + 1) % 100;
+	}
+}
+
+void Konsument()
+{
+	for (;;) {
+		if (stkempty()) {
+			signal(empty_stack);
+			wait(full_stack);
+			cout << "Konsument\n";
+		}
+
+		cout << stkpop() << '\n';
+	}
+}
+
+void main()
+{
+	initialsem(empty_stack, 1);
+	initialsem(full_stack, 0);
+
+	cobegin {
+		Producent();
+		Konsument();
+	}
+}
