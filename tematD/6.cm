@@ -27,7 +27,6 @@ int dequeue()
 	return v;
 }
 
-
 semaphore Pelne, Wolne;
 
 void Producent()
@@ -37,7 +36,6 @@ void Producent()
 	for (;;) {
 		wait(Wolne);
 		enqueue(i);
-		cout << "Produced: " << i << '\n';
 		++i;
 		signal(Pelne);
 	}
@@ -47,14 +45,14 @@ void Konsument()
 {
 	for (;;) {
 		wait(Pelne);
-		cout << "Consumed: " << dequeue() << '\n';
+		cout << dequeue() << '\n';
 		signal(Wolne);
 	}
 }
 
 void main()
 {
-	initialsem(Pelne, 1);
+	initialsem(Pelne, 0);
 	initialsem(Wolne, N);
 
 	cobegin {
