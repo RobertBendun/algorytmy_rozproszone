@@ -1,0 +1,69 @@
+// wykluczanie na podstawie TestAndSet polaga na wyścigu o wyjście z pętli while (TestAndSet(l))
+// ponieważ funkcja jest atomic, tylko jeden proces ma możliwość zachowania stanu wolny (l = 0), który
+// pozwala na wyjście z pętli, gdyż od razu po zdobyciu tego stanu zmienia stan l na zajęty (l = 1).
+
+atomic int TestAndSet(int &zmienna)
+{
+	int u;
+	u = zmienna;
+	zmienna = 1;
+	return u;
+}
+
+int wykluczenie = 0;
+
+void Prolog(int i)
+{
+	while (TestAndSet(wykluczenie)) {}
+}
+
+void Epilog(int i)
+{
+	wykluczenie = 0;
+}
+
+
+int in_critical[10];
+void proc(int i)
+{
+	int x = 0;
+	for (;;) {
+		Prolog(i);
+		in_critical[i] = 1;
+
+		for (x = 0; x < 100; ++x) {}
+
+		in_critical[i] = 0;
+		Epilog(i);
+	}
+}
+
+atomic void print_bits()
+{
+	int i;
+	for (i = 0; i < 10; ++i) {
+		cout << in_critical[i];
+	}
+	cout << "\n";
+}
+
+void print()
+{
+	for (;;) {
+		print_bits();
+	}
+}
+
+int main()
+{
+	int i = 0;
+	for (i = 0; i < 10; ++i)
+		in_critical[i] = 0;
+
+	cobegin {
+		for (i = 0; i < 10; ++i) {
+			proc(i);
+		}
+		print();
+	}
+}

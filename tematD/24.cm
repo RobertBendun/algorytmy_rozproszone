@@ -1,0 +1,64 @@
+
+int flag[2];
+int turn;
+
+void enter(int i)
+{
+	int other;
+	other = 1 - i;
+
+	// jesli flag ustawić po turn to możliwa jest taka egzekucja:
+	// P0: turn = 1
+	// P1: turn = 0
+	// P1: flag[1] = 1
+	// P1: while (flag[other] /*= 0*/ && turn == other) {}
+	// P1: enters critical section
+	// PO: flag[0] = 1
+	// P0: while (flag[other] /*= 1*/ && turn == other /*= 0*/) {}
+	// PO: enters critical section
+	// która pozwala obu procesom wejśc do sekcji krytycznej równocześnie
+
+	flag[i] = 1;
+	turn = other;
+
+	while (flag[other] && turn == other) {
+		// busy wait
+	}
+
+	// critical section begins
+}
+
+void leave(int i)
+{
+	// critical section ends
+	flag[i] = 0;
+}
+
+int count;
+int counts[2];
+
+void proc(int i)
+{
+	for (;;) {
+		enter(i);
+			++count;
+			counts[i] = counts[i] + 1;
+		leave(i);
+	}
+}
+
+void print()
+{
+	for (;;) {
+		cout << count << "\t" << (counts[0] + counts[1]) << "\t" << (counts[0] + counts[1] - count ) << "\n";
+	}
+}
+
+void main()
+{
+	cobegin {
+		proc(0);
+		proc(1);
+		print();
+	}
+}
