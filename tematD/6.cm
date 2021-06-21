@@ -1,1 +1,64 @@
+const int N = 5;
+int buffer[N];
+int write_ptr = 0;
+int read_ptr = 0;
 
+int queue_empty()
+{
+	return write_ptr == read_ptr;
+}
+
+int queue_full()
+{
+	return (write_ptr + 1) % N == read_ptr;
+}
+
+void enqueue(int value)
+{
+	buffer[write_ptr] = value;
+	write_ptr = (write_ptr + 1) % N;
+}
+
+int dequeue()
+{
+	int v;
+	v = buffer[read_ptr];
+	read_ptr = (read_ptr + 1) % N;
+	return v;
+}
+
+
+semaphore Pelne, Wolne;
+
+void Producent()
+{
+	int i = 0;
+
+	for (;;) {
+		wait(Wolne);
+		enqueue(i);
+		cout << "Produced: " << i << '\n';
+		++i;
+		signal(Pelne);
+	}
+}
+
+void Konsument()
+{
+	for (;;) {
+		wait(Pelne);
+		cout << "Consumed: " << dequeue() << '\n';
+		signal(Wolne);
+	}
+}
+
+void main()
+{
+	initialsem(Pelne, 1);
+	initialsem(Wolne, N);
+
+	cobegin {
+		Producent();
+		Konsument();
+	}
+}
