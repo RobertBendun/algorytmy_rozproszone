@@ -3,23 +3,23 @@ int buffer[N];
 int write_ptr = 0;
 int read_ptr = 0;
 
-int stkempty()
+int queue_empty()
 {
 	return write_ptr == read_ptr;
 }
 
-int stkfull()
+int queue_full()
 {
 	return (write_ptr + 1) % N == read_ptr;
 }
 
-void stkpush(int value)
+void enqueue(int value)
 {
 	buffer[write_ptr] = value;
 	write_ptr = (write_ptr + 1) % N;
 }
 
-int stkpop()
+int dequeue()
 {
 	int v;
 	v = buffer[read_ptr];
@@ -27,14 +27,6 @@ int stkpop()
 	return v;
 }
 
-void stkprint()
-{
-	int p;
-	for (p = read_ptr; p != write_ptr; p = (p + 1) % N) {
-		cout << buffer[p] << " ";
-	}
-	cout << "\n";
-}
 
 binarysem full_stack, empty_stack;
 
@@ -44,8 +36,8 @@ void Producent()
 
 	for (;;) {
 		wait(empty_stack);
-		while (!stkfull()) {
-			stkpush(i);
+		while (!queue_full()) {
+			enqueue(i);
 			cout << "Produced: " << i << '\n';
 			++i;
 		}
@@ -58,8 +50,8 @@ void Konsument()
 {
 	for (;;) {
 		wait(full_stack);
-		while (!stkempty()) {
-			cout << "Consumed: " << stkpop() << '\n';
+		while (!queue_empty()) {
+			cout << "Consumed: " << dequeue() << '\n';
 		}
 		cout << "\n";
 		signal(empty_stack);
