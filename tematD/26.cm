@@ -32,14 +32,14 @@ void proc(int i)
 		Prolog(i);
 		in_critical[i] = 1;
 
-		for (x = 0; x < 100; ++x) {}
+		for (x = 0; x < 10000; ++x) {}
 
 		in_critical[i] = 0;
 		Epilog(i);
 	}
 }
 
-atomic void print_bits()
+void print_bits()
 {
 	int i;
 	for (i = 0; i < 10; ++i) {

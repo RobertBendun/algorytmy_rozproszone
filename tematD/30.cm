@@ -1,0 +1,113 @@
+atomic int TestAndSet(int &zmienna)
+{
+	int u;
+	u = zmienna;
+	zmienna = 1;
+	return u;
+}
+
+const int N = 11;
+int queue[N];
+int write_ptr = 0;
+int read_ptr = 0;
+
+void enqueue()
+{
+	queue[write_ptr] = which_proc();
+	write_ptr = (write_ptr + 1) % N;
+}
+
+int dequeue()
+{
+	int pid;
+	pid = queue[read_ptr];
+	read_ptr = (read_ptr + 1) % N;
+	return pid;
+}
+
+int queue_empty()
+{
+	return read_ptr == write_ptr;
+}
+
+// Semafor
+int sem = 3;
+int lock = 0;
+
+void sem_wait()
+{
+	while (TestAndSet(lock)) {}
+
+	if (sem > 0) {
+		sem = sem - 1;
+		lock = 0;
+		return;
+	}
+
+	enqueue();
+	lock = 0;
+	suspend();
+}
+
+void sem_signal()
+{
+	int pid;
+	while (TestAndSet(lock)) {}
+
+	if (queue_empty()) {
+		sem = sem + 1;
+		lock = 0;
+		return;
+	}
+	pid = dequeue();
+	lock = 0;
+	revive(pid);
+}
+
+
+int in_critical[10];
+
+void proc(int i)
+{
+	int x = 0;
+	for (;;) {
+		sem_wait();
+		in_critical[i] = 1;
+
+		for (x = 0; x < 1000; ++x) {}
+
+		in_critical[i] = 0;
+		sem_signal();
+	}
+}
+
+void print_bits()
+{
+	int i;
+	for (i = 0; i < 10; ++i) {
+		cout << in_critical[i];
+	}
+	cout << "\n";
+}
+
+void print()
+{
+	for (;;) {
+		print_bits();
+	}
+}
+
+int main()
+{
+	int i = 0;
+
+	for (i = 0; i < 10; ++i)
+		in_critical[i] = 0;
+
+	cobegin {
+		for (i = 0; i < 10; ++i) {
+			proc(i);
+		}
+		print();
+	}
+}
