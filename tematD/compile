@@ -5,5 +5,4 @@ if [ -z $1 ]; then
 	exit 1
 fi
 
-../baci/bacc $1
-../baci/bainterp $1
+../baci/bacc $1 && ../baci/bainterp $1
