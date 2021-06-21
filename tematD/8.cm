@@ -43,27 +43,26 @@ void Producent()
 	int i = 0;
 
 	for (;;) {
-		if (stkfull()) {
-			signal(full_stack);
-			wait(empty_stack);
-			cout << "Producent\n";
+		wait(empty_stack);
+		while (!stkfull()) {
+			stkpush(i);
+			cout << "Produced: " << i << '\n';
+			++i;
 		}
-
-		stkpush(i);
-		i = (i + 1) % 100;
+		cout << "\n";
+		signal(full_stack);
 	}
 }
 
 void Konsument()
 {
 	for (;;) {
-		if (stkempty()) {
-			signal(empty_stack);
-			wait(full_stack);
-			cout << "Konsument\n";
+		wait(full_stack);
+		while (!stkempty()) {
+			cout << "Consumed: " << stkpop() << '\n';
 		}
-
-		cout << stkpop() << '\n';
+		cout << "\n";
+		signal(empty_stack);
 	}
 }
 
