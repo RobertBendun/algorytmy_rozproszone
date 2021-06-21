@@ -1,0 +1,64 @@
+const int liczbaWierz = 4;
+int locks[liczbaWierz];
+int lock = 0;
+
+atomic int TestAndSet(int &zmienna)
+{
+	int u;
+	u = zmienna;
+	zmienna = 1;
+	return u;
+}
+
+
+void fiber_yield(int id)
+{
+	lock = 0;
+	while (TestAndSet(locks[id])) {}
+}
+
+void runda()
+{
+	int i = 0;
+	for (i = 0; i < liczbaWierz; ++i) {
+		locks[i] = 0;
+		while (TestAndSet(lock)) {}
+	}
+}
+
+void proc(int id)
+{
+	int runda = 0;
+	for (;;) {
+		cout << "id = " << id << "\trunda=" << runda << "\n";
+		++runda;
+		fiber_yield(id);
+	}
+}
+
+void init_proc(int id)
+{
+	while (TestAndSet(locks[id])) {}
+	proc(id);
+}
+
+void egzekucja()
+{
+	int i = 0;
+	for (i = 0; i < 100; ++i)
+		runda();
+	exit();
+}
+
+int main()
+{
+	int i = 0;
+
+	cobegin {
+		for (i = 0; i < liczbaWierz; ++i) {
+			init_proc(i);
+		}
+
+		egzekucja();
+	}
+}
